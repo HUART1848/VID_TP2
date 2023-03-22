@@ -1,5 +1,79 @@
 ---
-title: "VID - TP2"
+title: "VID - Travail Pratique 2"
+date: "2023"
+author: "Hugo Huart"
+fontsize: 12pt
 output: pdf_document
-date: "2023-03-22"
+toc: yes
+toc-title: "Table des matières"
+header-includes:
+  - \usepackage{fancyhdr}
+  - \pagestyle{fancy}
+  - \setlength{\headheight}{32pt}
+  - \fancyhead[LE,LO]{Hugo Huart - VID - Travail Pratique 2}
+  - \usepackage{geometry}
+  - \geometry{top=2cm,left=2cm,bottom=2cm,right=2cm}
 ---
+
+\pagebreak
+# Introduction
+
+introduction introduction introduction introduction introduction 
+
+# Chargement des librairies
+
+```{r}
+library("ggplot2")
+```
+
+\pagebreak
+# Exercice 1
+
+Chargement des données dans la variable `kalama`:
+
+```{r}
+kalama<-read.table("data/kalama.txt", header=T)
+```
+
+## 1 - a)
+
+Calcul du coefficient de corrélation entre la taille et l'âge:
+
+```{r}
+cor(kalama$age, kalama$taille)
+```
+
+## 1 - b)
+
+Affichage du graphique en nuage de points des valeurs taille versus âge:
+
+```{r fig.align='center', fig.width=5, fig.height=5}
+ggplot(kalama, aes(x=age, y=taille)) +
+  geom_point() +
+  theme_bw()
+```
+
+## 1 - c)
+
+Estimation des coefficients $\beta_0$ et $\beta_1$:
+
+```{r}
+kalama.lm<-lm(taille~age, data=kalama)
+kalama.coef<-data.frame(intercept=coef(kalama.lm)[1], slope=coef(kalama.lm)[2])
+```
+
+## 1 - d)
+
+Affichage du graphique précédent modifié avec la droite des moindres carrés:
+
+```{r fig.align='center', fig.width=6, fig.height=5}
+ggplot(kalama, aes(x=age, y=taille)) +
+  geom_point() +
+  geom_abline(data=kalama.coef,
+              aes(intercept=intercept, slope=slope),
+              linetype=2) + 
+  theme_classic()
+```
+
+## Exercice 1 - e)
+
