@@ -24,10 +24,17 @@ introduction introduction introduction introduction introduction
 
 ```{r}
 library("ggplot2")
+library("ggResidpanel")
+library("ggrepel")
 ```
 
 \pagebreak
 # Exercice 1
+
+Cet exercice à pour but d'appliquer un modèle de régression linéaire sur des
+données comprenant la taille moyenne en centimètres (cm) d’un groupe d’enfants
+de Kalama, village en Egypte, mesurée chaque mois entre le 18-ième
+et le 29-ième mois.
 
 Chargement des données dans la variable `kalama`:
 
@@ -47,15 +54,16 @@ cor(kalama$age, kalama$taille)
 
 Affichage du graphique en nuage de points des valeurs taille versus âge:
 
-```{r fig.align='center', fig.width=5, fig.height=5}
+```{r fig.align='center', fig.width=4, fig.height=4}
 ggplot(kalama, aes(x=age, y=taille)) +
   geom_point() +
   theme_bw()
 ```
 
+\pagebreak
 ## 1 - c)
 
-Estimation des coefficients $\beta_0$ et $\beta_1$:
+Estimation des coefficients $\beta_0$ (`intercept`) et $\beta_1$ (`slope`):
 
 ```{r}
 kalama.lm<-lm(taille~age, data=kalama)
@@ -64,16 +72,158 @@ kalama.coef<-data.frame(intercept=coef(kalama.lm)[1], slope=coef(kalama.lm)[2])
 
 ## 1 - d)
 
-Affichage du graphique précédent modifié avec la droite des moindres carrés:
+Affichage du graphique précédent modifié avec la droite des moindres carrés en
+rouge:
 
 ```{r fig.align='center', fig.width=6, fig.height=5}
-ggplot(kalama, aes(x=age, y=taille)) +
+ggplot(data=kalama, aes(x=age, y=taille)) +
   geom_point() +
-  geom_abline(data=kalama.coef,
-              aes(intercept=intercept, slope=slope),
-              linetype=2) + 
-  theme_classic()
+  geom_abline(data=kalama.coef, aes(intercept=intercept, slope=slope),
+              colour="red", linetype=2) +
+  theme_bw()
 ```
 
-## Exercice 1 - e)
+\pagebreak
+## 1 - e)
+
+On peut estimer la variance des erreurs en calculant la variance des résidus:
+
+```{r}
+var(resid(kalama.lm))
+```
+
+## 1 - f)
+
+Estimation du coefficient de détermination:
+
+```{r}
+summary(kalama.lm)$r.squared
+```
+
+## 1 - g)
+
+Affichage d'un diagnostic du modèle, à l'aide de la libraire `ggResidpanel`:
+
+```{r, fig.align='center', fig.width=8, fig.height=6}
+resid_panel(kalama.lm, plots="all")
+```
+
+## 1 - h)
+
+On constate dans le graphique des résidus du point précédent que ces derniers
+ont des valeurs plutôt faibles et sont répartis de façon homogène;
+le modèle est donc assez bon en ce sens.
+
+De plus, le graphique du point **d)** permet de constater facilement
+l'alignement des valeurs et le faible écart par rapport
+à la droite de régression. La variance des erreurs estimée au point **e)** est
+elle aussi très faible.
+
+## 1 - i)
+
+En regardant le résumé du modèle de régression linéaire: 
+
+```{r}
+summary(kalama.lm)
+```
+
+On constate que la _p-value_ de la pente du modèle
+(à la ligne `age` et la colonne `Pr(>|t|)` du tableau `Coefficients`)
+est bien inférieure à 5%, ce qui est significatif.
+
+\pagebreak
+# Exercice 2
+
+Cet exercice à pour but d'analyser le Produit National Brut par habitant (PNB)
+et la mortalité infantile de 14 pays européens.
+
+## 2 - a)
+
+Chargement des données dans l'objet `mortalite.pnb`:
+
+```{r}
+mortalite.pnb <- data.frame(pays=c("Allemagne RFA","Autriche","Belgique","Danemark","Espagne",
+"France","Grèce","Irlande","Italie","Luxembourg","Pays-Bas",
+"Portugal","Royaume-Uni","Suisse"),
+PNB=c(190, 128, 180, 212, 56, 192, 68, 98, 110, 197, 155, 40, 181, 233),
+mortalite=c(24, 28, 24, 19, 37, 22, 34, 25, 36, 24, 14, 65, 20, 18))
+print(mortalite.pnb)
+```
+
+## 2 - b)
+
+Affichage du résumé des variables: 
+
+```{r}
+summary(mortalite.pnb)
+```
+
+\pagebreak
+## 2 - c)
+
+On commence par appliquer un modèle de régression linéaire sur nos données:
+
+```{r}
+mortalite.pnb.lm<-lm(mortalite~PNB, data=mortalite.pnb)
+mortalite.pnb.coef<-data.frame(intercept=coef(mortalite.pnb.lm)[1],
+                               slope=coef(mortalite.pnb.lm)[2])
+```
+
+Affichage d'un nuage de point représentant la mortalité infantile _(x)_ en
+fonction du produit national brut _(y)_:
+
+```{r fig.align='center', fig.width=6, fig.height=5.5}
+ggplot(data=mortalite.pnb, aes(x=PNB, y=mortalite, label=pays)) + 
+  geom_point(colour="slateblue4") +
+  geom_text_repel(colour="slateblue4") +
+  geom_abline(data=mortalite.pnb.coef, aes(slope=slope, intercept=intercept),
+              colour="blue") +
+  labs(x="PNB par habitant", y="mortalité infantile",
+       title="PNB et mortalité infantile") + 
+  theme_minimal()
+```
+
+\pagebreak
+
+Le Portugal est de loin le pays le plus éloigné de la tendance générale. Dans
+une moindre mesure, les Pays-Bas et l'Irlande se démarquent également, bien
+que plus légèrement.
+
+## 2 - d)
+
+En prenant les valeurs suivantes du modèle:
+
+```{r}
+mortalite.pnb.lm
+```
+
+On peut écrire l'équation $y = \beta_0x + \beta_1 + e$ où $e$ correspond à
+l'erreur,  $\beta_0$ à la valeur de `(Intercept)` ($51.0133$)
+et $\beta_1$ à la valeur de `(PNB)` ($-0.1589$).
+
+## 2 - e)
+
+Calcul du coefficient de corrélation $r$:
+
+```{r}
+mortalite.pnb.cor<-cor(mortalite.pnb$PNB, mortalite.pnb$mortalite)
+mortalite.pnb.cor
+```
+
+## 2 - f)
+
+Calcul du coefficient de détermination $R^2$ égal à $r^2$:
+
+```{r}
+mortalite.pnb.cor^2
+```
+
+\pagebreak
+## 2 - g)
+
+
+```{r, fig.align='center', fig.width=5, fig.height=5}
+par(mfrow=c(2, 2))
+plot(mortalite.pnb.lm)
+```
 
