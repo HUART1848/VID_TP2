@@ -6,6 +6,7 @@ fontsize: 12pt
 output: pdf_document
 toc: yes
 toc-title: "Table des matières"
+toc-depth: 2
 header-includes:
   - \usepackage{fancyhdr}
   - \pagestyle{fancy}
@@ -20,7 +21,7 @@ header-includes:
 
 introduction introduction introduction introduction introduction 
 
-# Chargement des librairies
+## Chargement des librairies
 
 ```{r}
 library("ggplot2")
@@ -83,7 +84,6 @@ ggplot(data=kalama, aes(x=age, y=taille)) +
   theme_bw()
 ```
 
-\pagebreak
 ## 1 - e)
 
 On peut estimer la variance des erreurs en calculant la variance des résidus:
@@ -98,6 +98,13 @@ Estimation du coefficient de détermination:
 
 ```{r}
 summary(kalama.lm)$r.squared
+```
+
+Étant donné qu'il s'agit d'une régression linéaire simple, on peut également
+calculer le coefficient de détermination avec le carré de celui de corrélation:
+
+```{r}
+cor(kalama$age, kalama$taille)^2
 ```
 
 ## 1 - g)
@@ -183,8 +190,6 @@ ggplot(data=mortalite.pnb, aes(x=PNB, y=mortalite, label=pays)) +
   theme_minimal()
 ```
 
-\pagebreak
-
 Le Portugal est de loin le pays le plus éloigné de la tendance générale. Dans
 une moindre mesure, les Pays-Bas et l'Irlande se démarquent également, bien
 que plus légèrement.
@@ -221,9 +226,79 @@ mortalite.pnb.cor^2
 \pagebreak
 ## 2 - g)
 
+Affichage des 4 graphiques aidant à la vérification des hypothèses inhérentes
+au modèle, c'est-à-dire:
+
+1. La linéarité de la relation;
+2. la nullité de l'espérance des erreurs et leur variance constante;
+3. La normalité des variables aléatoires erreurs.
 
 ```{r, fig.align='center', fig.width=5, fig.height=5}
 par(mfrow=c(2, 2))
 plot(mortalite.pnb.lm)
 ```
+
+Dans ces graphiques, **R** a relevé les 3 pays aux valeurs
+les plus anormales identifiées précédemment en affichant leur numéro respectifs.
+Il s'agit de l'Irlande (**8**), des Pays-Bas (**11**) et du Portugal (**12**).
+
+Ci-dessous se trouvent les informations relevées par chaque graphique:
+
+### Nuage de points des résidus (`Residuals vs Fitted`)
+
+On constate une variabilité assez proche autour de 0 malgré une légère tendance
+à la baisse. Le modèle reste assez satisfaisant mais pas totalement
+idéal en ce sens. L'hypothèse d'espérance des erreurs nulle
+semble être vérifiée.
+
+### Nuage de points de la racine carrée de la valeur absolue des résidus contre les valeurs ajustées (`Scale-Location`)
+
+Hormis les valeurs plutôt atypiques déjà connues, les valeurs ont toutes une
+variance assez semblable. L'hypothèse de variance constante est vérifiée.
+
+### Graphique des résidus observés standardisés contre les résidus théoriques (`Q-Q Residuals`)
+
+Hormis la valeur du Portugal, les valeurs restent proches de la droite.
+L'hypothèse de normalité des erreurs est vérifiée.
+
+### Graphique représentant la distance de Cook (`Residuals vs Leverage`)
+
+On retrouve la valeur du Portugal au delà des traitillés, ce qui confirme
+encore une fois son statut de valeur atypique.
+
+## 2 - h)
+
+Prédiction de la mortalité infantile pour un PNB de 100.
+
+```{r}
+xnew <- matrix(c(100), nrow=1)
+colnames(xnew) <- c("PNB")
+xnew <- as.data.frame(xnew)
+predict(mortalite.pnb.lm, xnew, interval="pred")
+```
+
+
+La prédiction nous donne une valeur d'environ $35.12$.
+
+## 2 - i)
+
+Le nouveau modèle possédant un coefficient de détermination de $0.74$ est
+sensiblement meilleur au modèle existant, possédant un coefficient
+d'environ $0.61$. Celui du nouveau modèle étant plus proche de 1, on peut
+considérer ce dernier comme étant sensiblement meilleur.
+
+# Exercice 3
+
+Cet exercice a pour but d'analyser la relation entre la taille de la portée,
+le poids du corps ainsi que le poids du cerveau d'un échantillon de 20 souris.
+
+On charge les données nécessaires dans un objet `litters`:
+
+```{r}
+
+```
+
+
+
+
 
