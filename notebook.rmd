@@ -1,7 +1,7 @@
 ---
 title: "VID - Travail Pratique 2"
 date: "2023"
-author: "Hugo Huart"
+author: "Farouk Ferchichi et Hugo Huart"
 fontsize: 12pt
 output: pdf_document
 toc: yes
@@ -11,7 +11,7 @@ header-includes:
   - \usepackage{fancyhdr}
   - \pagestyle{fancy}
   - \setlength{\headheight}{32pt}
-  - \fancyhead[LE,LO]{Hugo Huart - VID - Travail Pratique 2}
+  - \fancyhead[LE,LO]{Ferchichi \& Huart - VID - Travail Pratique 2}
   - \usepackage{geometry}
   - \geometry{top=2cm,left=2cm,bottom=2cm,right=2cm}
 ---
@@ -23,10 +23,18 @@ introduction introduction introduction introduction introduction
 
 ## Chargement des librairies
 
-```{r}
+```{r warning=FALSE, message=FALSE}
 library("ggplot2")
 library("ggResidpanel")
 library("ggrepel")
+library("GGally")
+library("rgl")
+library("scatterplot3d")
+library("leaps")
+library("performance")
+library("tidyverse")
+library("palmerpenguins")
+library("palettes")
 ```
 
 \pagebreak
@@ -202,9 +210,9 @@ En prenant les valeurs suivantes du modèle:
 mortalite.pnb.lm
 ```
 
-On peut écrire l'équation $y = \beta_0x + \beta_1 + e$ où $e$ correspond à
+On peut écrire l'équation $y = \beta_0 + \beta_1x1 + e$ où $e$ correspond à
 l'erreur,  $\beta_0$ à la valeur de `(Intercept)` ($51.0133$)
-et $\beta_1$ à la valeur de `(PNB)` ($-0.1589$).
+et $\beta_1$ à la valeur de $-0.1589$ et $x_1$ la variable `PNB`.
 
 ## 2 - e)
 
@@ -287,18 +295,378 @@ sensiblement meilleur au modèle existant, possédant un coefficient
 d'environ $0.61$. Celui du nouveau modèle étant plus proche de 1, on peut
 considérer ce dernier comme étant sensiblement meilleur.
 
+\pagebreak
 # Exercice 3
 
 Cet exercice a pour but d'analyser la relation entre la taille de la portée,
 le poids du corps ainsi que le poids du cerveau d'un échantillon de 20 souris.
 
-On charge les données nécessaires dans un objet `litters`:
+Chargement des données nécessaires dans un objet `litters`:
 
 ```{r}
-
+litters<-readRDS("data/litters.rds")
+litters
 ```
 
+\pagebreak
+## 3 - a)
+
+Affichage du graphique de corrélations et des nuages de points:
+
+```{r fig.align='center', fig.width=5, fig.height=5}
+ggpairs(litters, lower=list(continuous=wrap("points", colour="cyan4")))
+```
+
+## 3 - b)
+
+À l'aide du nuage de points et de la valeur du coefficient de corrélation
+d'environ $-0.95$, on constate un relation négative entre les variables
+`lsize` et `bodywt`.
+
+## 3 - c)
+
+Entre `brainwt` et `lsize`, la relation négative est moins évidente mais reste
+mesurable grâce au coefficient de corrélation d'une valeur d'environ $-0.62$.
+
+Entre `brainwt` et `bodywt`, on constate une relation positive à l'aide du
+graphique et du coefficient d'une valeur d'environ $0.74$.
+
+\pagebreak
+## 3 - d)
+
+Affichage d'un graphique en 3D interactif représentant les 3 variables `lsize`,
+`bodywt`, `brainwt`:
+
+```{r warning=F} 
+plotids <- with(litters, plot3d(lsize, bodywt, brainwt,
+                                type="s", col="blue"))
+rglwidget(elementId = "plot3drgl")
+```
+
+En manipulant le cube contenant le graphique, on constate un alignement des
+points dans l'espace.
+
+## 3 - e)
+
+Bien qu'intéressant à manipuler, il n'est pas très commode de distinguer les
+deux effets des variables explicatives sur la variable de réponse. Le graphique
+du point **a)** était déjà suffisant à cet égard.
+
+\pagebreak
+## 3 - f)
+
+En utilisant un modèle linéaire multiple avec `brainwt` comme variable
+de réponse ainsi que `lsize` et `bodywt` comme variables explicatives:
+
+```{r}
+litters.fit<-lm(brainwt~lsize+bodywt, data=litters)
+litters.fit
+```
+
+On a donc l'équation $y = \beta_0 + \beta_1*x_1+\beta_2*x_2 + e$
+où $e$ est l'erreur, $\beta_0$ vaut environ $0.17$, $\beta_1$ vaut $0.0067$
+et $\beta_2$ vaut $0.024$. De plus, $x_1$ correspond à la variable `lsize`
+et $x_2$ à `bodywt`.
+
+## 3 - g)
+
+Affichage de la table de résumé pour `litters.fit`:
+
+```{r}
+summary(litters.fit)
+```
+
+Les deux variables explicatives sont significatives à un niveau de $5%$.
+Cependant, `bodywt` est plus significative que `lsize`, étant à un niveau
+en deçà de $1%$ contre un niveau d'environ $4.75%$ pour `lsize`.
+
+Ceci correspond aux coefficients et nuages de points déterminés précédemment.
+
+## 3 - h)
+
+Affichage d'un nuage de points comprenant les 3 variables:
+
+```{r fig.align='center', fig.width=5, fig.height=5}
+s3d <- scatterplot3d(litters$lsize, litters$bodywt, litters$brainwt, main = "",
+color="midnightblue", xlab="litter size", ylab="body weight",
+zlab="brain weight", angle = -60, pch=21, bg="orange")
+s3d$plane3d(litters.fit, draw_polygon=TRUE, lty.box="solid")
+```
+
+## 3 - i)
+
+Affichage du coefficient de détermination $R^2$:
+
+```{r}
+summary(litters.fit)$r.squared
+```
+
+Affichage du coefficient de détermination ajusté $R^{2}_{adj}$:
+
+```{r}
+summary(litters.fit)$adj.r.squared
+```
+
+Étant donné que la taille de l'échantillon est petite ($n=20$), le coefficient
+ajusté est plus judicieux. On constate ici que sa valeur est plus faible que
+celle de $R^2$, ce qui confirme la sur-estimation de ce dernier.
+
+\pagebreak
+## 3 - j)
+
+Affichage des 4 graphiques aidant à la vérification des hypothèses inhérentes
+au modèle:
+
+```{r, fig.align='center', fig.width=5, fig.height=5}
+par(mfrow=c(2, 2))
+plot(litters.fit)
+```
+
+### Nuage de points des résidus (`Residuals vs Fitted`)
+
+Il n'y a pas vraiment de tendance qui se dessine. Les valeurs sont également
+très proche de l'axe nul, il semble adéquat de valider l'hypothèse
+de l'espérance des erreurs nulle.
+
+### Nuage de points de la racine carrée de la valeur absolue des résidus contre les valeurs ajustées (`Scale-Location`)
+
+La variance des résidus semblent assez constante le long de la tendance.
+L'hypothèse de variance constante peut être validée.
+
+### Graphique des résidus observés standardisés contre les résidus théoriques (`Q-Q Residuals`)
+
+Les points restent en général proche de la droite. On note cependant un
+léger décrochage au début et à la fin de cette dernière. On peut quand-même
+accepter l'hypothèse de la normalité des erreurs.
+
+### Graphique représentant la distance de Cook (`Residuals vs Leverage`)
+
+Il n'y a pas vraiment points au delà des traitillés de ce graphique, donc de
+valeurs atypiques notables. On peut noter cependant que **R** a relevé les
+points **1**, **17** et **19** pour ces 4 graphiques.
+
+Globalement, les 3 hypothèses ont pu être validés même si le modèle n'est pas
+idéal. Il serait peut-être judicieux d'ajouter des facteurs où des
+transformations supplémentaires dans l'équation du modèle.
+
+\pagebreak
+# Exercice 4
+
+Cet exercice a pour but de traiter un échantillon de 38 pinots noirs issu d'une
+dégustation sensorielle, représenté par 5 variables explicatives:
+la transparence (_Clarity_), l'arôme (_Aroma_), le corps (_Body_), la saveur
+(_Flavor_) ainsi que le goût boisé (_Oakiness_). La variable de réponse y est
+la qualité du vin dégusté.
+
+On charge ces données dans un objet `wine`:
+
+```{r}
+wine<-read.csv("data/Wine.csv")
+wine
+```
+
+## 4 - a)
+
+Affichage du graphique de corrélations et nuages de points:
+
+```{r fig.align='center', fig.width=7, fig.height=7}
+ggpairs(wine, lower=list(continuous=wrap("points", colour="cyan4")))
+```
+
+Les variables `Flavor` et `Aroma` possèdent les deux meilleures
+coefficients de corrélation par rapport à la variable réponse
+($0.790$ et $0.707$ respectivement).
+
+Certaines variables ont des coefficients très mauvais comme `Clarity`
+et `Oakiness`. Leurs graphiques respectifs vis-à-vis de `Quality` montre cette
+tendance fortement non-linéaire.
+
+## 4 - b)
+
+Création d'un modèle comprenant toutes les variables explicatives:
+
+```{r}
+wine.fit1<-lm(Quality~Clarity+Aroma+Body+Flavor+Oakiness, data=wine)
+wine.fit1
+```
+
+L'équation est $y = \beta_0 + \beta_1x_1 + \beta_2x_2 + \beta_3x_3 + \beta_4x_4 + \beta_5x_5 + e$
+où :
+
+- $y$ est la variable réponse `Quality`
+- $\beta_0$ vaut environ 3.99 et correspond à `(Intercept)`
+- $\beta_1$ vaut environ 2.34 et $x_1$ correspond à Clarity
+- $\beta_2$ vaut environ 0.48 et $x_2$ correspond à Aroma
+- $\beta_3$ vaut environ 0.27 et $x_3$ correspond à Body
+- $\beta_4$ vaut environ 1.17 et $x_4$ correspond à Flavor
+- $\beta_5$ vaut environ -0.68 et $x_5$ correspond à Oakiness
+- $e$ correspond à l'erreur
+
+## 4 - c)
+
+Affichage de la table de résumé du modèle:
+
+```{r}
+summary(wine.fit1)
+```
+
+On constate que les variable `Flavor` et `Oakiness` sont les deux seules étant
+significative à un niveau de signification de 5%. `Oakiness` a donc la deuxième
+variable la plus significative malgré le fait qu'elle est le deuxième pire
+coefficient de corrélation, comme vu au point **a)**.
+
+## 4 - d)
+
+Affichage du coefficient de détermination $R^2$:
+
+```{r}
+summary(wine.fit1)$r.squared
+```
+
+Affichage du coefficient de détermination ajusté $R^{2}_{adj}$:
 
 
+```{r}
+summary(wine.fit1)$adj.r.squared
+```
 
+## 4 - e)
 
+Explication des différentes méthodes:
+
+- $R^{2}_{adj}$ : La valeur $R^{2}_{adj}$ a pour but de "corriger"
+le coefficient $R^2$ (sa tendance croissante au fur et à mesure que l'on
+rajoute des variables) en prenant en compte le nombre d'observations. Il est
+tout le temps au plus inférieur ou égal $R^2$.
+Sa formule est $R^{2}_{adj} = 1 - (1 - R^2)(\frac{n - 1}{n - 2})$ et elle a
+l'avantage d'être relativement simple.
+
+- $AIC$ : Une méthode qui utilise le nombre de variables indépendantes
+ainsi qu'un estimateur du maximum de vraisemblance du modèle, et que l'on
+applique sur plusieurs modèles à tester ou départager. Sa formule est
+$AIC = 2K-2\ln(L)$ où $K$ est le nombre de variable indépendantes et $L$
+l'estimateur. Plus la valeur d'$AIC$ est basse, meilleur est
+considéré le modèle.
+
+- $BIC$ : Une méthode assez similaire à $AIC$, mais où la correction du
+surnombre d'attributs est un peu plus robuste. Sa formule est
+$BIC=\ln(n)K-2\ln(L)$ où $n$ est le nombre d'observations et $K$ et $L$
+identiques à ceux de la formule d'$AIC$. Sa limitation principale est que le
+nombre $n$ doit être bien supérieur au nombre $k$.
+
+- $C_p$ : Une méthode encore une fois similaire au critère d’Akaike.
+$C_p=\frac{1}{n}(RSS+2p{\hat{\sigma }}^2)$ où $RSS$ est la somme résiduelles des
+carrés, $p$ est le nombre de variables et $\hat{\sigma}^2$ une estimation de
+la variance des prédictions du modèle complet. Sa principale limitation est le
+fait que cette méthode est réellement valide sur des échantillons
+de taille supérieure.
+
+## 4 - f)
+
+Application des critères $R^2_{adj}$, $BIC$ et $C_p$:
+
+```{r fig.align='center', fig.width=4, fig.height=4}
+choix<-regsubsets(Quality~Clarity+Aroma+Body+Flavor+Oakiness, data=wine,
+                  nbest=1, nvmax=11)
+plot(choix, scale="adjr2", col="midnightblue")
+leaps<-regsubsets(Quality~Clarity+Aroma+Body+Flavor+Oakiness, data=wine,
+                  nbest=10)
+summary(leaps)
+```
+
+On constate que, par exemple, le meilleur modèle avec trois variables
+explicatives est celui comprenant `Aroma`, `Flavor` et `Oakiness`. Les qualités
+de ces variables déjà pu être appréciée dans les points précédents.
+
+### Ajustement du nouveau modèle
+
+On va donc utiliser ces deux variables pour l'ajustement d'un nouveau modèle
+plus simple `wine.fit2`:
+
+```{r}
+wine.fit2<-lm(Quality~Aroma+Flavor+Oakiness, data=wine)
+wine.fit2
+```
+
+### Résumé
+
+Table de résumé du nouveau modèle:
+
+```{r}
+summary(wine.fit2)
+```
+
+### Vérification des hypothèses
+
+Affichage des 4 graphiques aidant à la vérification des hypothèses inhérentes
+au modèle:
+
+```{r fig.align='center', fig.width=5, fig.height=5}
+par(mfrow=c(2, 2))
+plot(wine.fit2, which=c(1:4))
+```
+
+### Nuage de points des résidus (`Residuals vs Fitted`)
+
+Il n'y a pas vraiment de tendance qui se dessine et la variance est constante.
+Il semble adéquat de valider l'hypothèse de l'espérance des erreurs nulle.
+
+### Nuage de points de la racine carrée de la valeur absolue des résidus contre les valeurs ajustées (`Scale-Location`)
+
+La variance des résidus semblent également assez constante le long de la
+tendance, bien qu'un peu moins aux extrémités. L'hypothèse de variance constante
+peut être validée.
+
+### Graphique des résidus observés standardisés contre les résidus théoriques (`Q-Q Residuals`)
+
+Les points restent en général proche de la droite, un peu moins aux extrémités.
+On peut tout de même accepter l'hypothèse de la normalité des erreurs.
+
+### Graphique représentant la distance de Cook (`Cook's distance`)
+
+Les points **9**, **20** et **30** ont la plus grande distance de Cook.
+
+Globalement, les 3 hypothèses ont pu être validés même si le modèle n'est pas
+idéal.
+
+### Performances
+
+Comparaison des performances, avec affichage du score de performance:
+
+```{r}
+compare_performance(wine.fit1, wine.fit2, rank=T)
+```
+
+On constate que le premier modèle possède des scores $R^2$ et $R^2_{adj}$
+supérieures au second, ce qui est attendu étant donné la nature de
+cette méthode à augmenter lorsque le nombre de variables explicatives augmente
+lui aussi. Cependant, le score de performance global fournit par la fonction
+montre que le second modèle est meilleur en ce sens.
+
+## 4 - g)
+
+Prédiction de la qualité d'un nouveau vin avec le second modèle:
+
+```{r}
+xnew <- matrix(c(7.7, 6.7, 3.7), nrow=1)
+colnames(xnew) <- c("Aroma", "Flavor", "Oakiness")
+xnew <- as.data.frame(xnew)
+predict(wine.fit2, xnew, interval="pred")
+```
+
+La qualité vaut environ $16.74$
+
+# Exercice 5
+
+Cet exercice à pour but d'expliquer la méthode des arbres de régression.
+
+Les arbres de régression sont une méthode d'apprentissage supervisé issue des
+arbres de décision ayant pour but d'effectuer de la prédiction de valeurs
+continues. La méthode consiste à utiliser un arbre où chaque sommet correspond
+à un test logique sur une certaine variable explicative, et où le résultat
+permet de descendre vers d'autres sommet de test puis jusqu'à un sommet final
+comprenant la valeur prédite par le modèle.
+
+# Exercice 6
+
+Cet exercice à pour but
